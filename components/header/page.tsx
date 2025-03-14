@@ -137,7 +137,7 @@ export function Header({ clearCart, addToCart }: HeaderProps) {
                   </Button>
                   {/* Botón para proceder a la compra */}
                   <Button
-                    variant="checkout"
+                    variant="link"
                     className="w-full mt-2 !bg-green-600 hover:!bg-green-700 text-white"
                     onClick={() => window.location.href = "/checkout/"}
                   >
