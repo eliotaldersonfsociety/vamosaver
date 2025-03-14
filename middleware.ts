@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server"
 export function middleware(request: NextRequest) {
   // Check for protected routes that require authentication
   const isProtectedRoute =
-    request.nextUrl.pathname.startsWith("/account") || request.nextUrl.pathname.startsWith("/checkout")
+    request.nextUrl.pathname.startsWith("/account") || request.nextUrl.pathname.startsWith("/dashboard")
 
   if (isProtectedRoute) {
     // Get the token from the cookie
