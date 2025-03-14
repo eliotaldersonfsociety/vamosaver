@@ -2,27 +2,25 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
-  console.log("Todas las cookies disponibles:", req.cookies.getAll()); // 👀 Verifica qué cookies están llegando
-
-  const accessToken = req.cookies.get("accessToken")?.value;
-  console.log("Middleware - Token de sesión:", accessToken); // 📌 Debería mostrar el token
-
-  const isAuthRoute = req.nextUrl.pathname.startsWith("/login");
-  const isProtectedRoute = req.nextUrl.pathname.startsWith("/dashboard");
-
-  if (!accessToken && isProtectedRoute) {
-    console.log("Middleware - No hay token, redirigiendo a /login");
-    return NextResponse.redirect(new URL("/login", req.url));
+  const accessToken = req.cookies.get("accessToken")?.value; // Obtener el accessToken de las cookies
+  
+  console.log("AccessToken en middleware:", accessToken); // Verifica si el token está llegando
+  
+  // Si el usuario intenta acceder a /dashboard y no tiene un accessToken
+  if (!accessToken && req.nextUrl.pathname.startsWith("/dashboard")) {
+    console.log("Redirigiendo a / porque no hay token.");
+    return NextResponse.redirect(new URL("/", req.url));
   }
 
-  if (accessToken && isAuthRoute) {
-    console.log("Middleware - Usuario autenticado, redirigiendo a /dashboard");
+  // Si el usuario ya está logueado y trata de acceder a /login, redirigir al dashboard
+  if (accessToken && req.nextUrl.pathname.startsWith("/login")) {
+    console.log("Redirigiendo a /dashboard porque ya está logueado.");
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
-  return NextResponse.next();
+  return NextResponse.next(); // Si todo está bien, permite el acceso
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/login"],
+  matcher: ["/dashboard/:path*", "/"],
 };
