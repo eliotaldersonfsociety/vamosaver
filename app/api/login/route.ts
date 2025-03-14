@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     }
 
     const accessToken = jwt.sign(
-      { userId: user.rows[0].id, email: user.rows[0].email },
+      { userId: user.rows[0].id, email: user.rows[0].email, name: user.rows[0].name, lastname: user.rows[0].lastname, phone: user.rows[0].phone, postalcode: user.rows[0].postalcode, direction: user.rows[0].direction },
       JWT_SECRET,
       { expiresIn: ACCESS_TOKEN_EXPIRATION }
     );

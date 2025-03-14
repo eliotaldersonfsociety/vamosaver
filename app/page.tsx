@@ -5,9 +5,9 @@ import { Header } from "@/components/header/page"; // Importa el Header desde la
 import { Product } from "@/types/user"; // Importa el tipo Product desde el archivo correcto
 
 const products: Product[] = [
-  { id: 1, name: "Product 1", price: 29.99, image: "/path/to/image1.jpg" },
-  { id: 2, name: "Product 2", price: 49.99, image: "/path/to/image2.jpg" },
-  { id: 3, name: "Product 3", price: 19.99, image: "/path/to/image3.jpg" },
+  { id: 1, name: "Redmi Note 20", price: 29.99, image: "/f1.jpg", quantity: 1 },
+  { id: 2, name: "iPhone 14", price: 49.99, image: "/f2.jpeg", quantity: 1 },
+  { id: 3, name: "Samsung Galaxy S24", price: 19.99, image: "/f3.jpg", quantity: 1 },
 ];
 
 export default function Home() {

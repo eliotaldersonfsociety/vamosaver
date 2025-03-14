@@ -1,5 +1,7 @@
+//payments.tsx
 "use client";
 
+import { useRouter } from "next/navigation";
 import { ShoppingCart, CreditCard, Wallet, Bitcoin } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -18,13 +20,16 @@ type Product = {
   name: string;
   price: number;
   quantity: number;
-  image?: string;
+  image: string;
 };
 
 export default function PaymentsPage() {
+  const router = useRouter();
   const [cookies, , removeCookie] = useCookies(["cart"]);
   const [cart, setCart] = useState<Product[]>([]);
   const [saldo, setSaldo] = useState<number | null>(null); // Estado para el saldo
+  const [paymentMethod, setPaymentMethod] = useState<string>("balance"); // Método de pago seleccionado
+  const [isProcessing, setIsProcessing] = useState(false); // Estado para controlar el proceso de pago
 
   useEffect(() => {
     if (!cookies.cart) return; // Si no hay carrito en cookies, salir
@@ -95,6 +100,48 @@ export default function PaymentsPage() {
   const shipping = 5.99;
   const total = subtotal + shipping;
 
+  const handlePayment = async () => {
+    if (isProcessing) return; // Evitar múltiples solicitudes
+
+    setIsProcessing(true);
+
+    try {
+      const response = await fetch("/api/purchases/buy/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          items: cart,
+          status: "pending", // Asumimos que el estado de la compra es pendiente
+          payment_method: paymentMethod,
+          name: "John", // Deberías obtener estos valores de un formulario de usuario
+          lastname: "Doe",
+          email: "john.doe@example.com",
+          phone: "1234567890",
+          postalcode: "12345",
+          direction: "123 Street Name",
+        }),
+        credentials: 'include',  // Asegúrate de que las cookies se envíen
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("Compra realizada con éxito");
+          router.push("/shopping");
+      } else {
+        console.error("Error al procesar el pago:", data.message);
+        alert("Error al realizar el pago.");
+      }
+    } catch (error) {
+      console.error("Error al procesar la compra:", error);
+      alert("Error al procesar la compra.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <div className="container mx-auto py-10 px-4">
       <div className="flex flex-col gap-6">
@@ -160,7 +207,7 @@ export default function PaymentsPage() {
                 <CardDescription>Selecciona cómo quieres pagar</CardDescription>
               </CardHeader>
               <CardContent>
-                <RadioGroup defaultValue="balance" className="space-y-4">
+                <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-4">
                   <div className="flex items-center space-x-2 rounded-md border p-4">
                     <RadioGroupItem value="balance" id="balance" />
                     <Label htmlFor="balance" className="flex items-center gap-2 cursor-pointer">
@@ -196,8 +243,8 @@ export default function PaymentsPage() {
                 </RadioGroup>
               </CardContent>
               <CardFooter className="flex flex-col gap-4">
-                <Button className="w-full" size="lg">
-                  Completar Pago
+                <Button className="w-full" size="lg" onClick={handlePayment} disabled={isProcessing}>
+                  {isProcessing ? "Procesando..." : "Completar Pago"}
                 </Button>
                 <Link href="/cart" className="text-center text-sm text-muted-foreground hover:underline">
                   Volver al carrito
