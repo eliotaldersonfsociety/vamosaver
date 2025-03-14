@@ -201,7 +201,7 @@ export function Header({ clearCart, addToCart }: HeaderProps) {
                       if (isLoggedIn) {
                         window.location.href = "/payments";
                       } else {
-                        window.location.href = "/auth/login?redirect=/checkout";
+                        window.location.href = "/checkout";
                       }
                     }}
                   >
