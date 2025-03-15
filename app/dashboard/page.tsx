@@ -68,6 +68,7 @@ export default function DashboardPage() {
   }, [router]);
 
   const handleRowClick = (purchase: Purchase) => {
+    console.log("Selected Purchase:", purchase); // Add this line to inspect the purchase data
     setSelectedPurchase(purchase);
     setIsModalOpen(true);
   };
@@ -248,7 +249,7 @@ export default function DashboardPage() {
                     <div className="grid grid-cols-2 gap-1 text-sm">
                       <span className="text-muted-foreground">Name:</span>
                       <span>
-                        {user?.name} {user?.lastname}
+                        {selectedPurchase.name} {selectedPurchase.lastname}
                       </span>
 
                       <span className="text-muted-foreground">Address:</span>

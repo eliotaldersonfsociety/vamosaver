@@ -28,9 +28,19 @@ export interface UserData {
 }
 
 export interface Purchase {
-  id: number;
+  id: string;
   created_at: string;
-  price: number;
-  status: string;
   item_name: string;
-}
+  price: number;
+  status: "por enviar" | "enviado" | "entregado" | "pending";
+  // Customer details
+  name: string;
+  lastname: string;
+  direction: string;
+  postalcode: string;
+  phone: string;
+  email: string;
+  payment_method: string;
+  quantity: number;
+  user_id: number;
+};
