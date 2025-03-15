@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CreditCard, ShoppingCart, User as UserIcon } from "lucide-react";
-import { Header } from "@/components/header/page"; // Asegúrate de que la ruta sea correcta
-import { toast } from "react-hot-toast"; // Importa react-hot-toast
+import { Header } from "@/components/header/page";
+import { toast } from "react-hot-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { UserData, Purchase } from "@/types/user";
 
@@ -18,25 +18,24 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const router = useRouter();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Obtener datos del usuario
         const userResponse = await fetch("/api/user", { credentials: "include" });
         if (!userResponse.ok) throw new Error("Error al obtener usuario");
         const userData = await userResponse.json();
         setUser(userData);
 
-        // Obtener balance
         const balanceResponse = await fetch("/api/balance", { credentials: "include" });
         if (!balanceResponse.ok) throw new Error("Error al obtener saldo");
         const balanceData = await balanceResponse.json();
         setBalance(balanceData.balance);
         setPurchaseCount(balanceData.purchaseCount);
 
-        // Obtener el número total de compras
         const purchaseCountResponse = await fetch("/api/purchases/count", {
           method: 'GET',
           credentials: "include"
@@ -45,15 +44,17 @@ export default function DashboardPage() {
         const purchaseCountData = await purchaseCountResponse.json();
         setPurchaseCount(purchaseCountData.purchaseCount);
 
-        // Obtener historial de compras
         const purchasesResponse = await fetch("/api/purchases", { credentials: "include" });
         if (!purchasesResponse.ok) throw new Error("Error al obtener compras");
         const purchasesData = await purchasesResponse.json();
         console.log("Purchases Data:", purchasesData);
 
-        // Asegurarse de que las compras sean un array
         if (Array.isArray(purchasesData.purchases)) {
-          setPurchases(purchasesData.purchases);
+          // Sort purchases by created_at in descending order
+            const sortedPurchases: Purchase[] = purchasesData.purchases.sort((a: Purchase, b: Purchase) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            );
+          setPurchases(sortedPurchases);
         } else {
           setPurchases([]);
         }
@@ -68,17 +69,25 @@ export default function DashboardPage() {
   }, [router]);
 
   const handleRowClick = (purchase: Purchase) => {
-    console.log("Selected Purchase:", purchase); // Add this line to inspect the purchase data
     setSelectedPurchase(purchase);
     setIsModalOpen(true);
   };
 
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
+  const currentPurchases = purchases?.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const totalPages = purchases ? Math.ceil(purchases.length / itemsPerPage) : 0;
+
   return (
     <div className="space-y-4">
-      {/* Se le pasan las props requeridas al Header */}
       <Header cart={[]} clearCart={() => {}} addToCart={() => {}} totalPrice={0} />
       {isLoading ? (
-        // Versión en carga con Skeleton
         <>
           <h1 className="text-2xl font-bold">
             <Skeleton className="h-8 w-48" />
@@ -137,7 +146,6 @@ export default function DashboardPage() {
           </Card>
         </>
       ) : (
-        // Versión con datos cargados
         <>
           <h1 className="text-2xl font-bold">Dashboard</h1>
           <div className="text-muted-foreground">
@@ -198,8 +206,8 @@ export default function DashboardPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {Array.isArray(purchases) && purchases.length > 0 ? (
-                      purchases.map((purchase) => {
+                    {currentPurchases && currentPurchases.length > 0 ? (
+                      currentPurchases.map((purchase) => {
                         const statusClass =
                           purchase.status === "por enviar"
                             ? "text-red-500"
@@ -233,10 +241,28 @@ export default function DashboardPage() {
                   </tbody>
                 </table>
               </div>
+              <div className="flex justify-between mt-4">
+                <button
+                  onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 border rounded"
+                >
+                  Previous
+                </button>
+                <span>
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={() => handlePageChange(Math.min(currentPage + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 border rounded"
+                >
+                  Next
+                </button>
+              </div>
             </CardContent>
           </Card>
 
-          {/* Modal */}
           <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
             {selectedPurchase && (
               <DialogContent className="sm:max-w-md">
