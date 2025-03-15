@@ -7,7 +7,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Header } from "@/components/header/page"; 
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+
 
 type Product = {
   id: string;
@@ -146,11 +149,22 @@ export default function PaymentConfirmation() {
     }).format(amount);
   };
 
-  if (loading) return <div className="text-center p-8">Cargando última compra...</div>;
+  if (loading) { 
+    return (
+      <div className="text-center p-8">
+        <Skeleton className="h-12 w-3/4 mb-4" />
+        <Skeleton className="h-6 w-1/2 mb-4" />
+        <Skeleton className="h-32 w-full mb-4" />
+        <Skeleton className="h-16 w-full" />
+      </div>
+    );
+  }
   if (error) return <div className="text-center p-8 text-red-500">Error: {error}</div>;
   if (!order) return <div className="text-center p-8">No se encontraron compras recientes</div>;
 
   return (
+    <>
+    <Header cart={[]} clearCart={() => {}} addToCart={() => {}} totalPrice={0} />
     <div className="container max-w-4xl mx-auto px-4 py-8">
       <div className="flex flex-col items-center text-center mb-8">
         <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
@@ -251,5 +265,6 @@ export default function PaymentConfirmation() {
         </Button>
       </div>
     </div>
+    </>
   );
 }

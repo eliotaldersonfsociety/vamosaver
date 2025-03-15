@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CreditCard, ShoppingCart, User as UserIcon } from "lucide-react";
 import { Header } from "@/components/header/page"; // Asegúrate de que la ruta sea correcta
-
-// Importa los tipos desde tu archivo de tipos
+import { toast } from "react-hot-toast"; // Importa react-hot-toast
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { UserData, Purchase } from "@/types/user";
 
 export default function DashboardPage() {
@@ -16,17 +16,13 @@ export default function DashboardPage() {
   const [purchaseCount, setPurchaseCount] = useState<number | null>(null);
   const [purchases, setPurchases] = useState<Purchase[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          alert("You must be logged in to access this page");
-          return;
-        }
-
         // Obtener datos del usuario
         const userResponse = await fetch("/api/user", { credentials: "include" });
         if (!userResponse.ok) throw new Error("Error al obtener usuario");
@@ -70,6 +66,11 @@ export default function DashboardPage() {
 
     fetchData();
   }, [router]);
+
+  const handleRowClick = (purchase: Purchase) => {
+    setSelectedPurchase(purchase);
+    setIsModalOpen(true);
+  };
 
   return (
     <div className="space-y-4">
@@ -206,7 +207,11 @@ export default function DashboardPage() {
                             : "text-gray-500";
 
                         return (
-                          <tr key={purchase.id}>
+                          <tr
+                            key={purchase.id}
+                            onClick={() => handleRowClick(purchase)}
+                            className="cursor-pointer hover:bg-muted/50 transition-colors"
+                          >
                             <td className="border p-2">
                               {new Date(purchase.created_at).toLocaleDateString()}{" "}
                               {new Date(purchase.created_at).toLocaleTimeString()}
@@ -229,6 +234,67 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Modal */}
+          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            {selectedPurchase && (
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Purchase Details</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-1 gap-2">
+                    <h3 className="font-medium">Customer Information</h3>
+                    <div className="grid grid-cols-2 gap-1 text-sm">
+                      <span className="text-muted-foreground">Name:</span>
+                      <span>
+                        {user?.name} {user?.lastname}
+                      </span>
+
+                      <span className="text-muted-foreground">Address:</span>
+                      <span>{selectedPurchase.direction}</span>
+
+                      <span className="text-muted-foreground">Postal Code:</span>
+                      <span>{selectedPurchase.postalcode}</span>
+
+                      <span className="text-muted-foreground">Phone:</span>
+                      <span>{selectedPurchase.phone}</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-2">
+                    <h3 className="font-medium">Product Information</h3>
+                    <div className="grid grid-cols-2 gap-1 text-sm">
+                      <span className="text-muted-foreground">Item:</span>
+                      <span>{selectedPurchase.item_name}</span>
+
+                      <span className="text-muted-foreground">Price:</span>
+                      <span>${selectedPurchase.price.toFixed(2)}</span>
+
+                      <span className="text-muted-foreground">Status:</span>
+                      <span
+                        className={
+                          selectedPurchase.status === "por enviar"
+                            ? "text-red-500"
+                            : selectedPurchase.status === "enviado"
+                            ? "text-green-500"
+                            : "text-gray-500"
+                        }
+                      >
+                        {selectedPurchase.status}
+                      </span>
+
+                      <span className="text-muted-foreground">Date:</span>
+                      <span>
+                        {new Date(selectedPurchase.created_at).toLocaleDateString()}{" "}
+                        {new Date(selectedPurchase.created_at).toLocaleTimeString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </DialogContent>
+            )}
+          </Dialog>
         </>
       )}
     </div>

@@ -12,6 +12,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { useCookies } from "react-cookie";
+import { Header } from "@/components/header/page"; 
+
 
 
 // Define the Product type
@@ -142,7 +144,9 @@ export default function PaymentsPage() {
     }
   };
 
-  return (
+  return (     
+  <>  
+  <Header cart={[]} clearCart={() => {}} addToCart={() => {}} totalPrice={0} />
     <div className="container mx-auto py-10 px-4">
       <div className="flex flex-col gap-6">
         <div className="flex items-center gap-2">
@@ -255,5 +259,6 @@ export default function PaymentsPage() {
         </div>
       </div>
     </div>
+  </>
   );
 }

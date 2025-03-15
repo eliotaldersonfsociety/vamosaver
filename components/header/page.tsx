@@ -74,6 +74,7 @@ export function Header({ clearCart, addToCart }: HeaderProps) {
       try {
         const res = await fetch("/api/user", { method: "GET" });
         setIsLoggedIn(res.ok);
+        console.error("Auth check failed:", res.ok);
       } catch (error) {
         console.error("Auth check failed:", error);
         setIsLoggedIn(false);

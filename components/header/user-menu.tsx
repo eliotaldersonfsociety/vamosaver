@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { toast } from "react-hot-toast";
+import { Skeleton } from '@/components/ui/skeleton'; // Importamos Skeleton
 
 interface UserMenuProps {
   onClose: () => void;
@@ -25,29 +27,22 @@ export function UserMenu({ onClose }: UserMenuProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [isFetching, setIsFetching] = useState(true); // Nuevo estado para el Skeleton
   const router = useRouter();
 
-  // Check if user is logged in on component mount
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      // Fetch user data from the server
-      fetchUserData(token);
-    }
+    fetchUserData();
   }, []);
 
-  const fetchUserData = async (token: string) => {
+  const fetchUserData = async () => {
+    setIsFetching(true);
     try {
       const response = await fetch('/api/user', {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        credentials: 'include',
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch user data');
-      }
+      if (!response.ok) throw new Error('No authenticated');
 
       const data = await response.json();
       setUserData(data);
@@ -55,6 +50,8 @@ export function UserMenu({ onClose }: UserMenuProps) {
     } catch (err) {
       console.error('Failed to fetch user data', err);
       localStorage.removeItem('token');
+    } finally {
+      setIsFetching(false);
     }
   };
 
@@ -68,29 +65,19 @@ export function UserMenu({ onClose }: UserMenuProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
+        credentials: "include",
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Error en la solicitud de inicio de sesión:', errorData);
         throw new Error('Login request failed');
       }
 
-      const data = await response.json();
-      localStorage.setItem('token', data.token);
-
-      // Set user data from response
-      setUserData({
-        name: data.user.name,
-        email: data.user.email,
-        avatar: data.user.avatar,
-      });
-
-      setIsLoggedIn(true);
-      router.push('/dashboard');
-    } catch (err) {
-      console.error('Error al iniciar sesión:', err);
-      setError('Unable to log in. Please check your credentials.');
+      toast.success("Inicio de sesión exitoso");
+      await fetchUserData();
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Error al iniciar sesión");
+      toast.error("Credenciales incorrectas");
     } finally {
       setIsLoading(false);
     }
@@ -112,13 +99,8 @@ export function UserMenu({ onClose }: UserMenuProps) {
       setUserData(null);
       router.push('/');
     } catch (err) {
-      console.error('Error al cerrar sesión:', err);
       setError('Unable to log out. Please try again.');
     }
-  };
-
-  const handleGoToDashboard = () => {
-    router.push('/dashboard');
   };
 
   return (
@@ -128,40 +110,44 @@ export function UserMenu({ onClose }: UserMenuProps) {
           <X className="h-4 w-4" />
           <span className="sr-only">Close</span>
         </Button>
-        {isLoggedIn ? (
-          <CardTitle>My Account</CardTitle>
-        ) : (
-          <>
-            <CardTitle>Login</CardTitle>
-            <CardDescription>Enter your credentials to access your account</CardDescription>
-          </>
-        )}
+        <CardTitle>{isLoggedIn ? "My Account" : "Login"}</CardTitle>
+        {!isLoggedIn && <CardDescription>Enter your credentials to access your account</CardDescription>}
       </CardHeader>
 
-      {isLoggedIn && userData ? (
+      {isLoggedIn ? (
         <>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-4">
               <div className="relative">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={userData.avatar} alt={userData.name} />
-                  <AvatarFallback>
-                    <User className="h-6 w-6" />
-                  </AvatarFallback>
-                </Avatar>
+                {isFetching ? (
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                ) : (
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={userData?.avatar} alt={userData?.name} />
+                    <AvatarFallback>
+                      <User className="h-6 w-6" />
+                    </AvatarFallback>
+                  </Avatar>
+                )}
                 <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-white" />
               </div>
               <div className="flex flex-col">
-                <span className="font-medium">{userData.name}</span>
-                <span className="text-sm text-muted-foreground">{userData.email}</span>
-                <span className="text-xs text-green-500 flex items-center gap-1">
-                  <span className="sr-only">Status:</span>
-                  Online
-                </span>
+                {isFetching ? (
+                  <>
+                    <Skeleton className="h-4 w-24 mb-1" />
+                    <Skeleton className="h-3 w-32" />
+                  </>
+                ) : (
+                  <>
+                    <span className="font-medium">{userData?.name}</span>
+                    <span className="text-sm text-muted-foreground">{userData?.email}</span>
+                    <span className="text-xs text-green-500 flex items-center gap-1">Online</span>
+                  </>
+                )}
               </div>
             </div>
             <Separator />
-            <Button variant="outline" className="w-full flex items-center gap-2" onClick={handleGoToDashboard}>
+            <Button variant="outline" className="w-full flex items-center gap-2" onClick={() => router.push('/dashboard')}>
               Dashboard
             </Button>
           </CardContent>
@@ -177,24 +163,11 @@ export function UserMenu({ onClose }: UserMenuProps) {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+              <Input id="email" type="email" placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
             {error && <div className="text-sm text-destructive">{error}</div>}
           </CardContent>
@@ -202,15 +175,7 @@ export function UserMenu({ onClose }: UserMenuProps) {
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? 'Logging in...' : 'Login'}
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={() => {
-                // Implement registration flow
-                console.log('Register clicked');
-              }}
-            >
+            <Button type="button" variant="outline" className="w-full" onClick={() => console.log('Register clicked')}>
               Create Account
             </Button>
           </CardFooter>

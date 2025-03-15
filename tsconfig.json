@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     "tailwind.config.js",  // Asegúrate de incluir tu archivo de configuración de Tailwind
     "postcss.config.ts"    
-, "next.config.ts"  ],
+, "next.config.ts", "middleware.tsdsfsd"  ],
   "exclude": ["node_modules"]
 }
